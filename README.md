@@ -1,4 +1,4 @@
 lottery9
 ========
 
-9 different approaches to implemend drawing (lottery) mechanisms in C++
+9 different approaches to implement drawing (lottery) mechanisms in C++
