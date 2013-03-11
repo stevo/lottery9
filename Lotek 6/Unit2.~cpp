@@ -1,0 +1,68 @@
+//---------------------------------------------------------------------------
+
+#include <vcl.h>
+#include <stdio.h>
+#pragma hdrstop
+
+#include "Unit2.h"
+#include "Unit1.h"
+//---------------------------------------------------------------------------
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+TForm2 *Form2;
+FILE *plik, *plik2;
+
+struct liczby_struct
+       {
+      int liczby_los[6];
+      int liczby_typ[6];
+       } liczby;
+
+extern int statystyki[49];
+//---------------------------------------------------------------------------
+
+__fastcall TForm2::TForm2(TComponent* Owner)
+        : TForm(Owner)
+{
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm2::BitBtn1Click(TObject *Sender)
+{
+Form2->Close();
+Form1->Show();
+}
+//---------------------------------------------------------------------------
+void __fastcall TForm2::FormShow(TObject *Sender)
+{
+Form2->Memo1->Clear();
+Form2->Memo2->Clear();
+
+plik=fopen("dane.dat","r+");
+fread(&statystyki,sizeof(statystyki),1,plik);
+                   for (int i=0; i<49; i++)
+                      {
+                      Form2->Memo1->Text=Form2->Memo1->Text+(i+1);
+                      Form2->Memo1->Text=Form2->Memo1->Text+" <-> ";
+                      Form2->Memo1->Text=Form2->Memo1->Text+statystyki[i];
+                      Form2->Memo1->Lines->Add("");
+
+                      }
+fclose(plik);
+
+
+plik2=fopen("dane2.dat","r+b");
+
+    while (fread(&liczby,sizeof(liczby_struct),1,plik2)) //dopoki udaje sie zczytac cala strukture to robimy to
+                                {
+                                 Form2->Memo2->Lines->Add("Wylosowane:");
+                                 for (int i=0; i<6; i++) {
+                                    Form2->Memo2->Text+=liczby.liczby_los[i];
+                                    Form2->Memo2->Text+=" ";
+                                                          }
+
+                                }
+                   fclose(plik2);
+
+
+}
+//---------------------------------------------------------------------------

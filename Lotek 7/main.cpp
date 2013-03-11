@@ -1,0 +1,395 @@
+#include <vcl.h>
+#include <iostream.h>
+#include <string.h>
+#pragma hdrstop
+#include "main.h"
+#pragma package(smart_init)
+#pragma resource "*.dfm"
+
+TForm1 *Form1;
+FILE *StatsFile; //Plik ze statystykami
+ FILE *HitsFile;   //i z wygranymi
+
+
+
+int Wytypowane[6];   //Tablica do przechowywania wytypowanych numerkow
+ int Wylosowane[6];   //... tych wylosowanych...
+  int Stats[50];  //...i statystyk wystapien w losowaniach
+
+
+
+
+struct liczby   //Struktura przechowywujaca wylosowane i wybrane liczby w przypadku wygranej
+ {
+  int wylosowane[6];
+  int wybrane[6];
+ };
+
+
+
+bool wygrana;
+liczby traf;
+
+
+__fastcall TForm1::TForm1(TComponent* Owner)
+        : TForm(Owner)
+{
+}
+
+
+
+
+bool Wyszukaj(int numerek ,int tab[])        //Sprawdza czy number istnieje w tablicy
+{
+  bool istnieje=False;  // Zakladamy ze nie istnieje
+
+  for (int i=0; i<6; i++)
+     if (tab[i]==numerek)  istnieje=True;    //Jesli number jest rowna temu elementowi to zwaracamy true;
+
+  return istnieje;  // w przeciwnym wypadku pozostanie false
+}
+
+
+
+
+void Losuj_liczby()
+{
+ randomize();
+   int number;
+
+  for (int n=0; n<6; n++)
+        {
+          number=(rand()%49)+1;  //losuje liczbe 1-49 (to +1 jest dlatego, ze normalnie wyszlaby z przedzialu 0-48)
+            if (!Wyszukaj(number,Wylosowane)) //Jesli jeszcze takiej nie wylosowano to wstawia ja do tablicy
+              Wylosowane[n]=number;
+                else n=n-1;
+        }
+}
+
+
+
+void ShowScores()
+{
+wygrana=False; //Zakladamy ze nic nie trafilismy
+
+Form1->E7->Text=Wylosowane[0];
+ Form1->E8->Text=Wylosowane[1];
+  Form1->E9->Text=Wylosowane[2];
+   Form1->E10->Text=Wylosowane[3];
+    Form1->E11->Text=Wylosowane[4];
+     Form1->E12->Text=Wylosowane[5];
+
+
+for (int n=0; n<6; n++)
+ if (Wyszukaj(Wylosowane[n],Wytypowane)) wygrana=True;
+
+
+if (!wygrana)
+  Form1->okienko->Lines->Add("BRAK WYGRANEJ");
+ else
+  Form1->okienko->Lines->Add("WYGRANA");
+}
+
+
+void Update()
+{
+if ((StatsFile=fopen("plik2.lot","r+"))!=NULL)            //Otwieramy plik statystyk
+ {
+   fread(&Stats,sizeof(Stats),1,StatsFile);               //Zczytujemy jedn¹ tablice
+    fclose(StatsFile);                                     //I zamykamy plik
+     for (int i=0;i<6;i++)                                  //Inkremetujemy te numerki ktore zostaly wylosowane
+     Stats[Wylosowane[i]]+=1;
+
+    StatsFile=fopen("plik2.lot","r+");                   //Ponownie otwieramy plik
+     fwrite(Stats,sizeof(Stats),1,StatsFile);              //i zapisujemy uaktualniona tablice w miejsce starej
+      fclose(StatsFile);                                    //zamykamy plik
+  }
+}
+
+void SaveScores()
+{
+for (int n=0; n<6; n++)    //Przepisujemy numerki wylosowane i wybrane do struktury TRAFIENIE
+ {
+   traf.wylosowane[n]=Wylosowane[n];
+    traf.wybrane[n]=Wytypowane[n];
+ }
+
+if ((HitsFile=fopen("plik1.lot","a+b"))!=NULL)  //Odpalamy se plik w trybie binarnym i dopisywania na koniec
+   {
+    fwrite(&traf,sizeof(traf),1,HitsFile);  //dodajemy do pliku wypelnion¹ strukture
+     fclose(HitsFile);                      //i zamykamy go
+   }
+}
+
+
+
+
+
+
+void __fastcall TForm1::BitBtn4Click(TObject *Sender)
+{
+Application->Terminate();
+}
+
+
+
+void __fastcall TForm1::E1Exit(TObject *Sender)
+{
+if ((atoi(E1->Text.c_str())>49) || (atoi(E1->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E1->SetFocus();
+}
+if (atoi(E1->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E1->SetFocus();
+}
+if (!Wyszukaj(atoi(E1->Text.c_str()),Wytypowane)) Wytypowane[0]=atoi(E1->Text.c_str());
+else if (atoi(E1->Text.c_str())==Wytypowane[0]) Wytypowane[0]=atoi(E1->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E1->SetFocus();
+  }
+}
+
+
+
+void __fastcall TForm1::E2Exit(TObject *Sender)
+{
+if ((atoi(E2->Text.c_str())>49) || (atoi(E2->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E2->SetFocus();
+}
+if (atoi(E2->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E2->SetFocus();
+}
+if (!Wyszukaj(atoi(E2->Text.c_str()),Wytypowane)) Wytypowane[1]=atoi(E2->Text.c_str());
+else if (atoi(E2->Text.c_str())==Wytypowane[1]) Wytypowane[1]=atoi(E2->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E1->SetFocus();
+  }
+}
+
+
+
+void __fastcall TForm1::E3Exit(TObject *Sender)
+{
+if ((atoi(E3->Text.c_str())>49) || (atoi(E3->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E3->SetFocus();
+}
+if (atoi(E3->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E3->SetFocus();
+}
+if (!Wyszukaj(atoi(E3->Text.c_str()),Wytypowane)) Wytypowane[2]=atoi(E3->Text.c_str());
+else if (atoi(E3->Text.c_str())==Wytypowane[2]) Wytypowane[2]=atoi(E3->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E3->SetFocus();
+  }
+}
+
+
+
+void __fastcall TForm1::E4Exit(TObject *Sender)
+{
+if ((atoi(E4->Text.c_str())>49) || (atoi(E4->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E4->SetFocus();
+}
+if (atoi(E4->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E4->SetFocus();
+}
+if (!Wyszukaj(atoi(E4->Text.c_str()),Wytypowane)) Wytypowane[3]=atoi(E4->Text.c_str());
+else if (atoi(E4->Text.c_str())==Wytypowane[3]) Wytypowane[3]=atoi(E4->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E4->SetFocus();
+  }
+}
+
+
+
+void __fastcall TForm1::E5Exit(TObject *Sender)
+{
+if ((atoi(E5->Text.c_str())>49) || (atoi(E5->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E5->SetFocus();
+}
+if (atoi(E5->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E5->SetFocus();
+}
+if (!Wyszukaj(atoi(E5->Text.c_str()),Wytypowane)) Wytypowane[4]=atoi(E5->Text.c_str());
+else if (atoi(E5->Text.c_str())==Wytypowane[4]) Wytypowane[4]=atoi(E5->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E5->SetFocus();
+  }
+}
+
+void __fastcall TForm1::E6Exit(TObject *Sender)
+{
+if ((atoi(E6->Text.c_str())>49) || (atoi(E6->Text.c_str())<0)) //Sprawdza czy podano liczbe z zakresu od 1 do 49
+{
+Form1->okienko->Lines->Add("Tylko liczby pomiedzy 1 a 49 sa dopuszczalne");
+E6->SetFocus();
+}
+if (atoi(E6->Text.c_str())==0) //Sprawdza czy wogole wpisano liczbe
+{
+Form1->okienko->Lines->Add("!!!Mozna uzywac jedynie cyfr!!!");
+E6->SetFocus();
+}
+if (!Wyszukaj(atoi(E6->Text.c_str()),Wytypowane)) Wytypowane[5]=atoi(E6->Text.c_str());
+else if (atoi(E6->Text.c_str())==Wytypowane[5]) Wytypowane[5]=atoi(E6->Text.c_str());
+else  //jesli wybrano, to musi ona byc w tym samym polu co poprzednio
+  {
+  Form1->okienko->Lines->Add("Liczba byla juz podana");
+  E6->SetFocus();
+  }
+}
+
+
+
+void __fastcall TForm1::Koniec1Click(TObject *Sender)
+{
+Application->Terminate();
+}
+
+
+
+
+void __fastcall TForm1::Losuj1Click(TObject *Sender)
+{
+if (!Wyszukaj(0,Wytypowane)) //jesli we wszystkich polach sa podane wartosci (czyli tablica jest wypelniona liczbami roznymi od 0)
+ {
+        Losuj_liczby();                 //losuje numerki
+         ShowScores();                  //i wyswietla je w polach
+          Update();                    //uaktualniamy statystyki
+           if (wygrana)
+            SaveScores();
+
+        Losuj1->Enabled=False; //Wylaczamy mozliwosc losowania;
+         NoweLosowanie1->Enabled=True;  //wlaczamy przycisk czyszczenia
+
+
+ }
+  else
+   {
+     okienko->Lines->Add("Nalezy podac 6 liczb");  // w przeciwnym wypadku komunikuje, ze nie podano wszyrkich liczb
+     okienko->Lines->Add("Prosze nie zapomniec o kliknieciu poza ostatnim polem przed wybraniem opcji losuj z menu");
+    }
+}
+
+
+
+
+void __fastcall TForm1::NoweLosowanie1Click(TObject *Sender)
+{
+
+for (int n=0; n<6; n++)
+{
+ Wylosowane[n]=0;
+ Wytypowane[n]=0;
+}
+
+Form1->E1->Clear();        //Czyscimy wszytkie pola
+ Form1->E2->Clear();
+  Form1->E3->Clear();
+   Form1->E4->Clear();
+    Form1->E5->Clear();
+     Form1->E6->Clear();
+      Form1->E7->Clear();
+       Form1->E8->Clear();
+        Form1->E9->Clear();
+         Form1->E10->Clear();
+          Form1->E11->Clear();
+           Form1->E12->Clear();
+
+
+Form1->okienko->Lines->Add("POLA WYCZYSZCZONE");
+ NoweLosowanie1->Enabled=False;  //Wylaczamy przycis czyszczenia
+  Losuj1->Enabled=True;           //Ukatywniamy przycisk losowania
+}
+
+
+
+
+void __fastcall TForm1::WyswietlStatystykiNumerow1Click(TObject *Sender)
+{
+if ((StatsFile=fopen("plik2.lot","r+"))!=NULL)      //Tak samo jak przy uaktualnianiu
+   {
+      fread(&Stats,sizeof(Stats),1,StatsFile);
+      fclose(StatsFile);
+   }
+
+Form1->okienko->Lines->Add("STATYSTYKI");
+
+  char bufor_a[6], bufor_b[6];;
+
+   for (int i=1; i<50;i++)
+    {
+     itoa(i,bufor_a,10);   //bufor_a bedzie zawieral numerek
+      strcat(bufor_a,"<->"); //oraz znak <->
+
+     itoa(Stats[i],bufor_b,10); //buf2 bedzie zawieral ilosc wystapien danego numerka
+      strcat(bufor_a,bufor_b);  //laczymy oba zeby to wygladalo +/- tak   1 = 12    (jedynka zostala wylosowana 12 razy)
+
+    Form1->okienko->Lines->Add(bufor_a); //i wypisujemy to do memo
+    }
+}
+
+
+
+
+void __fastcall TForm1::Wyswietldotychczasowewygrane1Click(TObject *Sender)
+{
+if ((HitsFile=fopen("plik1.lot","r+b"))!=NULL)  //Odpalamy se plik w trybie binarnym i odczytywania
+ {
+        Form1->okienko->Lines->Add("***************");
+        Form1->okienko->Lines->Add("WYGRANE");
+
+       while (fread(&traf,sizeof(traf),1,HitsFile)) //dopoki udaje sie zczytac cala strukture to robimy to
+       {
+         Form1->okienko->Lines->Add("= = = = = = = =");
+
+          string a="",b=""; //pomocnicze zmienne typu string
+
+          for(int i=0; i<6;i++)
+          {
+           a=a+(AnsiString(traf.wybrane[i]).c_str());   //mozemy wykonywac takie operacje dzieki temu ze jest to zmienna typu STRING
+           a=a+" ";
+
+           b=b+(AnsiString(traf.wylosowane[i]).c_str());
+           b=b+" ";
+          }
+
+        Form1->okienko->Lines->Add("TYPOWANE-> ");    //Wyswietlamy zawartosci buforow
+        Form1->okienko->Text=Form1->okienko->Text+a.c_str();
+        Form1->okienko->Lines->Add("LOSOWANE-> ");
+        Form1->okienko->Text=Form1->okienko->Text+b.c_str();
+
+       }
+         fclose(HitsFile);
+    }
+}
+
+
